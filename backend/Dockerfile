@@ -9,5 +9,5 @@ COPY . .
 
 EXPOSE 8000
 
-# Shell form use karein taake Railway ka $PORT variable sahi se integer me convert ho ske
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# Shell expansion ke jhanjhat ko khatam kar ke seedha Python se Port read karein
+CMD ["python", "-c", "import os, uvicorn; uvicorn.run('app.main:app', host='0.0.0.0', port=int(os.environ.get('PORT', 8000)))"]
