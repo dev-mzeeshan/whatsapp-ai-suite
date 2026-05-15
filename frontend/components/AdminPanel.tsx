@@ -329,9 +329,13 @@ export default function AdminPanel() {
 
       {/* Add tenant modal */}
       {showAdd && (
+        // <AddTenant
+        //   onClose={() => setShowAdd(false)}
+        //   onCreated={fetchTenants}
+        // />
         <AddTenant
           onClose={() => setShowAdd(false)}
-          onCreated={fetchTenants}
+          onSuccess={fetchTenants}
         />
       )}
     </div>
