@@ -99,6 +99,9 @@ def create_app() -> FastAPI:
 
     return app
 
-
 # The ASGI app — this is what uvicorn points at.
 app = create_app()
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
