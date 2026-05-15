@@ -10,7 +10,7 @@ pydantic-settings==2.5.2
 httpx==0.27.2
 
 
-pwdlib
+pwdlib[argon2]
 
 # Database (async)
 sqlalchemy==2.0.35
