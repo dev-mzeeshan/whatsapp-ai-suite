@@ -10,19 +10,14 @@ from app.db.session import get_db
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-
 router = APIRouter()
 
 
 @router.get("/health")
 async def health_check(db: AsyncSession = Depends(get_db)) -> dict:
     """
-    Deep health check — verifies live DB connectivity.
-    Used by Docker, load balancers, and uptime monitors.
-
-    Returns:
-        200 + {"status": "ok"}    — everything is healthy
-        200 + {"status": "degraded"} — app is up but DB is unreachable
+    Deep health check — DB connectivity + app info.
+    Used by Railway healthcheck and uptime monitors.
     """
     start = time.perf_counter()
     db_status = "ok"
