@@ -97,7 +97,8 @@ class Settings(BaseSettings):
     #  CORS                                                                 #
     # ------------------------------------------------------------------ #
   
-    CORS_ORIGINS: str = "https://whatsapp-ai-suite-hazel.vercel.app"
+    # CORS_ORIGINS: str = "https://whatsapp-ai-suite-hazel.vercel.app"
+    CORS_ORIGINS: str = "http://localhost:3000,https://whatsapp-ai-suite-hazel.vercel.app"
 
     @property
     def cors_origins_list(self) -> list[str]:
