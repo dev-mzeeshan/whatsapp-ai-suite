@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,6 +53,9 @@ class UpdateTenantRequest(BaseModel):
     monthly_message_limit: int | None = None
     meta_access_token: str | None = None
     status: str | None = None
+
+class ResetClientPasswordRequest(BaseModel):
+    new_password: str = Field(..., min_length=8)
 
 
 # --------------------------------------------------------------------------- #
@@ -230,3 +233,28 @@ async def delete_tenant(
  
     logger.info("Tenant deleted | id=%s | name=%s", tenant_id, tenant.business_name)
     return {"message": "Tenant deleted successfully"}
+
+
+
+@router.post("/{tenant_id}/reset-password")
+async def reset_client_password(
+    tenant_id: str,
+    body: ResetClientPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    _: TenantUser = Depends(require_super_admin),
+) -> dict:
+    """
+    Super Admin kisi bhi client ka password reset kare.
+    """
+    from app.services.auth_service import hash_password
+
+    result = await db.execute(
+        select(TenantUser).where(TenantUser.tenant_id == tenant_id)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Client user not found")
+
+    user.hashed_password = hash_password(body.new_password)
+    await db.commit()
+    return {"message": "Password reset successfully"}

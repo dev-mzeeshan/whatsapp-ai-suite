@@ -7,7 +7,8 @@ import {
   ToggleLeft, ToggleRight, LogOut, ChevronRight,
   Wifi, WifiOff,
 } from "lucide-react";
-import { tenantsAPI } from "@/lib/api";
+
+import { tenantsAPI, api } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import AddTenant from "@/components/AddTenant";
 import { useRouter } from "next/navigation";
@@ -314,7 +315,26 @@ export default function AdminPanel() {
                                     <path d="M10 11v6M14 11v6"/>
                                     <path d="M9 6V4h6v2"/>
                                 </svg>
-                                </button>
+                            </button>
+                            <button
+                                onClick={() => {
+                                  const newPass = prompt("Enter new password for " + tenant.business_name + ":");
+                                  if (newPass && newPass.length >= 8) {
+                                    api.post(`/tenants/${tenant.id}/reset-password`, { new_password: newPass })
+                                      .then(() => alert("Password reset successfully!"))
+                                      .catch(() => alert("Failed to reset password"));
+                                  } else if (newPass) {
+                                    alert("Password must be at least 8 characters");
+                                  }
+                                }}
+                                className="text-[#8696a0] hover:text-blue-400 transition-colors ml-2"
+                                title="Reset client password"
+                              >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                  <path d="M7 11V7a5 5 0 0110 0v4"/>
+                                </svg>
+                              </button>
                           </div>
                         </td>
                       </tr>

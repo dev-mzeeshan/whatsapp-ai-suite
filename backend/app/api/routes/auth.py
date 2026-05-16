@@ -272,3 +272,40 @@ async def setup_super_admin(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+class UpdateProfileRequest(BaseModel):
+    full_name: str | None = None
+    current_password: str | None = None
+    new_password: str | None = None
+
+
+@router.patch("/profile")
+async def update_profile(
+    body: UpdateProfileRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: TenantUser = Depends(get_current_user),
+) -> dict:
+    """
+    Logged in user apna name ya password change kare.
+    """
+    from app.services.auth_service import verify_password, hash_password
+
+    if body.full_name:
+        current_user.full_name = body.full_name
+
+    if body.new_password:
+        # Current password verify karo pehle
+        if not body.current_password:
+            raise HTTPException(
+                status_code=400,
+                detail="Current password required to set new password",
+            )
+        if not verify_password(body.current_password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=400,
+                detail="Current password is incorrect",
+            )
+        current_user.hashed_password = hash_password(body.new_password)
+
+    await db.commit()
+    return {"message": "Profile updated successfully"}
