@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import EditTenant from "./EditTenant";
+import ProfileSettings from "./ProfileSettings";
 
 import {
   Users, MessageSquare, Activity, Plus, Power, Eye, Bot,
@@ -63,6 +65,8 @@ export default function AdminPanel() {
   const activeClients = tenants.filter((t) => t.status === "ACTIVE").length;
   const totalMessages = tenants.reduce((a, t) => a + t.current_month_messages, 0);
   const totalLimit = tenants.reduce((a, t) => a + t.monthly_message_limit, 0);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
@@ -81,6 +85,13 @@ export default function AdminPanel() {
           <span className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full font-medium">
             {user?.full_name}
           </span>
+          <button
+            onClick={() => setShowProfile(true)}
+            className="flex items-center gap-1.5 text-xs text-[#8696a0] hover:text-white border border-[#2a3942] px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Users size={12} />
+            Profile
+          </button>
           <button
             onClick={() => { logout(); router.push("/login"); }}
             className="text-[#8696a0] hover:text-red-400 transition-colors p-1.5"
@@ -284,6 +295,16 @@ export default function AdminPanel() {
                             >
                               <Eye size={13} />
                             </button>
+                            <button
+                              onClick={() => setEditingTenant(tenant)}
+                              className="text-[#8696a0] hover:text-[#00a884] transition-colors"
+                              title="Edit client"
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
 
                             {/* Toggle active/inactive */}
                             <button
@@ -357,6 +378,16 @@ export default function AdminPanel() {
           onClose={() => setShowAdd(false)}
           onSuccess={fetchTenants}
         />
+      )}
+      {editingTenant && (
+        <EditTenant
+          tenant={editingTenant}
+          onClose={() => setEditingTenant(null)}
+          onSuccess={() => { setEditingTenant(null); fetchTenants(); }}
+        />
+      )}
+      {showProfile && (
+        <ProfileSettings onClose={() => setShowProfile(false)} />
       )}
     </div>
   );

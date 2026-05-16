@@ -6,6 +6,7 @@ import { Search, Bot, User } from "lucide-react";
 import { conversationsAPI } from "@/lib/api";
 import { useStore, Conversation } from "@/lib/store";
 import { useSidebarSocket } from "@/lib/websocket";
+import ProfileSettings from "./ProfileSettings";
 
 export default function Sidebar() {
   const conversations = useStore((s) => s.conversations);
@@ -16,6 +17,7 @@ export default function Sidebar() {
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
 
   // Sidebar WebSocket — real-time updates
   useSidebarSocket();
@@ -73,7 +75,16 @@ export default function Sidebar() {
           }`}>
             {user?.role === "SUPER_ADMIN" ? "Admin" : "Operator"}
           </span>
-
+          <button
+            onClick={() => setShowProfile(true)}
+            className="text-[#8696a0] hover:text-white transition-colors"
+            title="Profile Settings"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
           <button
             onClick={() => {
               useStore.getState().logout();
@@ -89,6 +100,9 @@ export default function Sidebar() {
             </svg>
           </button>
         </div>
+        {showProfile && (
+          <ProfileSettings onClose={() => setShowProfile(false)} />
+        )}
       </div>
 
       {/* Search */}
