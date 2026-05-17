@@ -7,6 +7,7 @@ import { conversationsAPI } from "@/lib/api";
 import { useStore, Conversation } from "@/lib/store";
 import { useSidebarSocket } from "@/lib/websocket";
 import ProfileSettings from "./ProfileSettings";
+import { useTabTitle } from "@/lib/useTabTitle";
 
 export default function Sidebar() {
   const conversations = useStore((s) => s.conversations);
@@ -21,6 +22,8 @@ export default function Sidebar() {
 
   // Sidebar WebSocket — real-time updates
   useSidebarSocket();
+
+  useTabTitle();
 
   useEffect(() => {
   const params = new URLSearchParams(window.location.search);
