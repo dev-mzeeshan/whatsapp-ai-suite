@@ -59,7 +59,7 @@
 // }
 
 "use client";
- 
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
@@ -67,7 +67,7 @@ import { authAPI } from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import { Menu, X } from "lucide-react";
- 
+
 export default function DashboardPage() {
   const router = useRouter();
   const setUser = useStore((s) => s.setUser);
@@ -77,15 +77,15 @@ export default function DashboardPage() {
   const setActiveConvId = useStore((s) => s.setActiveConvId);
   const [ready, setReady] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
- 
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/login"); return; }
     setToken(token);
- 
+
     const params = new URLSearchParams(window.location.search);
     const isAdminView = params.get("admin") === "true";
- 
+
     authAPI.me()
       .then((res) => {
         setUser(res.data);
@@ -97,7 +97,7 @@ export default function DashboardPage() {
       })
       .catch(() => router.push("/login"));
   }, []); // eslint-disable-line
- 
+
   if (!ready || !user) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -105,10 +105,10 @@ export default function DashboardPage() {
       </div>
     );
   }
- 
+
   return (
     <div className="flex h-screen h-[100dvh] bg-[#0b1418] overflow-hidden">
- 
+
       {/* Mobile overlay */}
       {sidebarOpen && activeConvId && (
         <div
@@ -116,7 +116,7 @@ export default function DashboardPage() {
           onClick={() => setSidebarOpen(false)}
         />
       )}
- 
+
       {/* Sidebar */}
       <div className={`
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -128,7 +128,7 @@ export default function DashboardPage() {
       `}>
         <Sidebar onConversationSelect={() => setSidebarOpen(false)} />
       </div>
- 
+
       {/* Chat window */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Mobile top bar — show only when no conversation */}
@@ -143,7 +143,7 @@ export default function DashboardPage() {
             <span className="text-white font-medium text-sm ml-3">ChatSetGo</span>
           </div>
         )}
- 
+
         <ChatWindow
           onBack={() => {
             setActiveConvId(null);

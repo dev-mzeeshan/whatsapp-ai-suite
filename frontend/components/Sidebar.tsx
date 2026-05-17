@@ -9,7 +9,13 @@ import { useSidebarSocket } from "@/lib/websocket";
 import ProfileSettings from "./ProfileSettings";
 import { useTabTitle } from "@/lib/useTabTitle";
 
-export default function Sidebar() {
+// 1. Sidebar ke liye Props ka Type define kiya
+interface SidebarProps {
+  onConversationSelect: () => void;
+}
+
+// 2. Component me prop ko accept kiya
+export default function Sidebar({ onConversationSelect }: SidebarProps) {
   const conversations = useStore((s) => s.conversations);
   const setConversations = useStore((s) => s.setConversations);
   const activeConvId = useStore((s) => s.activeConvId);
@@ -26,8 +32,8 @@ export default function Sidebar() {
   useTabTitle();
 
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const tenantId = params.get("tenant_id");
+    const params = new URLSearchParams(window.location.search);
+    const tenantId = params.get("tenant_id");
 
     conversationsAPI
       .list(1, tenantId || undefined)
@@ -48,15 +54,7 @@ export default function Sidebar() {
           <h1 className="text-white font-semibold text-base">ChatSetGo</h1>
           <p className="text-[#8696a0] text-xs">{user?.full_name}</p>
         </div>
-        {/* <span
-          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            user?.role === "SUPER_ADMIN"
-              ? "bg-amber-500/20 text-amber-400"
-              : "bg-[#00a884]/20 text-[#00a884]"
-          }`}
-        >
-          {user?.role === "SUPER_ADMIN" ? "Admin" : "Operator"}
-        </span> */}
+        
         <div className="flex items-center gap-2">
           {user?.role === "SUPER_ADMIN" && (
             <button
@@ -144,6 +142,7 @@ export default function Sidebar() {
             onClick={() => {
               setActiveConvId(conv.id);
               conversationsAPI.markRead(conv.id).catch(() => {});
+              onConversationSelect();
             }}
           />
         ))}
