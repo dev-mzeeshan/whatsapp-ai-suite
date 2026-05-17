@@ -257,6 +257,7 @@ import { Bot, User, Send, Power, Phone, ChevronDown } from "lucide-react";
 import { conversationsAPI } from "@/lib/api";
 import { useStore, Message } from "@/lib/store";
 import { useConversationSocket } from "@/lib/websocket";
+import MessageBubble from "./MessageBubble";
 
 export default function ChatWindow({ onBack }: { onBack?: () => void }) {
   const activeConvId = useStore((s) => s.activeConvId);
@@ -270,47 +271,36 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
   const [sending, setSending] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
-  const typingTimer = useRef<NodeJS.Timeout | null>(null);
 
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const convMessages = activeConvId ? messages[activeConvId] || [] : [];
 
   useConversationSocket(activeConvId);
 
-  // Load messages
   useEffect(() => {
     if (!activeConvId) return;
     setLoadingMessages(true);
-    setIsTyping(false);
     conversationsAPI
       .messages(activeConvId)
       .then((res) => setMessages(activeConvId, res.data))
       .finally(() => setLoadingMessages(false));
   }, [activeConvId, setMessages]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     if (!showScrollBtn) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [convMessages.length, isTyping]);
+  }, [convMessages.length]);
 
-  // Scroll detection
   const handleScroll = useCallback(() => {
     if (!chatRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = chatRef.current;
     setShowScrollBtn(scrollHeight - scrollTop - clientHeight > 150);
   }, []);
-
-  const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    setShowScrollBtn(false);
-  };
 
   const handleToggleBot = async () => {
     if (!activeConvId || toggling) return;
@@ -336,9 +326,10 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
     }
   };
 
+  // Empty state
   if (!activeConvId || !activeConv) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#0b1418]">
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#0b1418] h-full">
         <div className="w-16 h-16 rounded-2xl bg-[#1f2c33] flex items-center justify-center mb-4">
           <Phone size={28} className="text-[#8696a0]" />
         </div>
@@ -348,37 +339,40 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#0b1418] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-[#0b1418] overflow-hidden h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#1f2c33] border-b border-[#2a3942] flex-shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-3 bg-[#1f2c33] border-b border-[#2a3942] flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {/* Back button — mobile */}
           {onBack && (
-            <button onClick={onBack} className="md:hidden text-[#8696a0] hover:text-white mr-1">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            <button
+              onClick={onBack}
+              className="md:hidden text-[#8696a0] hover:text-white flex-shrink-0 p-1 -ml-1"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+              </svg>
             </button>
           )}
-          <div className="w-9 h-9 rounded-full bg-[#2a3942] flex items-center justify-center text-[#8696a0] text-sm font-medium">
+
+          <div className="w-9 h-9 rounded-full bg-[#2a3942] flex items-center justify-center text-[#8696a0] text-sm font-medium flex-shrink-0">
             {(activeConv.contact_name || activeConv.contact_wa_id).slice(0, 2).toUpperCase()}
           </div>
-          <div>
-            <p className="text-white text-sm font-medium">
+          <div className="min-w-0">
+            <p className="text-white text-sm font-medium truncate">
               {activeConv.contact_name || activeConv.contact_wa_id}
             </p>
-            <p className="text-[#8696a0] text-xs">
-              {isTyping ? (
-                <span className="text-[#00a884]">typing...</span>
-              ) : (
-                `+${activeConv.contact_wa_id}`
-              )}
+            <p className="text-[#8696a0] text-xs truncate">
+              +{activeConv.contact_wa_id}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {user?.role === "SUPER_ADMIN" && (
             <button
               onClick={() => window.location.href = "/admin"}
-              className="flex items-center gap-1.5 text-xs text-[#8696a0] hover:text-white transition-colors border border-[#2a3942] px-3 py-1.5 rounded-lg"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-[#8696a0] hover:text-white border border-[#2a3942] px-2 py-1.5 rounded-lg transition-colors"
             >
               ← Admin
             </button>
@@ -386,14 +380,16 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
           <button
             onClick={handleToggleBot}
             disabled={toggling}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               activeConv.is_bot_active
                 ? "bg-[#00a884]/20 text-[#00a884] hover:bg-[#00a884]/30"
                 : "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
             }`}
           >
             {activeConv.is_bot_active ? <Bot size={13} /> : <User size={13} />}
-            {activeConv.is_bot_active ? "Bot Active" : "Manual"}
+            <span className="hidden sm:inline">
+              {activeConv.is_bot_active ? "Bot Active" : "Manual"}
+            </span>
             <Power size={11} />
           </button>
         </div>
@@ -403,8 +399,12 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
       <div
         ref={chatRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-4"
-        style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #1f2c3308 1px, transparent 0)", backgroundSize: "24px 24px" }}
+        className="flex-1 overflow-y-auto px-3 sm:px-4 py-4"
+        style={{
+          backgroundImage: "radial-gradient(circle at 1px 1px, #1f2c3308 1px, transparent 0)",
+          backgroundSize: "24px 24px",
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         {loadingMessages && (
           <div className="flex justify-center py-8">
@@ -421,7 +421,6 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
           const showDate =
             !prev ||
             new Date(msg.created_at).toDateString() !== new Date(prev.created_at).toDateString();
-
           return (
             <div key={msg.id}>
               {showDate && <DateSeparator date={new Date(msg.created_at)} />}
@@ -430,52 +429,41 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
           );
         })}
 
-        {/* Typing indicator */}
-        {isTyping && (
-          <div className="flex justify-start mb-2">
-            <div className="bg-[#1f2c33] rounded-lg rounded-tl-none px-4 py-3">
-              <div className="flex gap-1 items-center h-4">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-2 bg-[#8696a0] rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 0.15}s` }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={bottomRef} />
+        <div ref={bottomRef} className="h-1" />
       </div>
 
-      {/* Scroll to bottom button */}
+      {/* Scroll to bottom */}
       {showScrollBtn && (
-        <button
-          onClick={scrollToBottom}
-          className="absolute bottom-20 right-6 w-10 h-10 bg-[#1f2c33] border border-[#2a3942] rounded-full flex items-center justify-center shadow-lg hover:bg-[#2a3942] transition-colors"
-        >
-          <ChevronDown size={18} className="text-[#8696a0]" />
-        </button>
+        <div className="absolute bottom-20 right-4 sm:right-6">
+          <button
+            onClick={() => {
+              bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+              setShowScrollBtn(false);
+            }}
+            className="w-10 h-10 bg-[#1f2c33] border border-[#2a3942] rounded-full flex items-center justify-center shadow-lg hover:bg-[#2a3942] transition-colors"
+          >
+            <ChevronDown size={18} className="text-[#8696a0]" />
+          </button>
+        </div>
       )}
 
       {/* Reply box */}
       {!activeConv.is_bot_active ? (
         <form
           onSubmit={handleReply}
-          className="flex items-center gap-3 px-4 py-3 bg-[#1f2c33] border-t border-[#2a3942] flex-shrink-0"
+          className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-[#1f2c33] border-t border-[#2a3942] flex-shrink-0"
         >
           <input
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 bg-[#2a3942] text-white placeholder-[#8696a0] rounded-lg px-4 py-2.5 text-sm outline-none"
+            className="flex-1 bg-[#2a3942] text-white placeholder-[#8696a0] rounded-lg px-3 sm:px-4 py-2.5 text-sm outline-none"
+            style={{ fontSize: "16px" }} // Prevents iOS zoom on focus
           />
           <button
             type="submit"
             disabled={sending || !reply.trim()}
-            className="w-10 h-10 rounded-full bg-[#00a884] disabled:opacity-40 flex items-center justify-center hover:bg-[#02b48f] transition-opacity"
+            className="w-10 h-10 rounded-full bg-[#00a884] disabled:opacity-40 flex items-center justify-center hover:bg-[#02b48f] transition-all active:scale-95 flex-shrink-0"
           >
             <Send size={16} className="text-white ml-0.5" />
           </button>
@@ -483,7 +471,7 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
       ) : (
         <div className="px-4 py-3 bg-[#1f2c33] border-t border-[#2a3942] flex-shrink-0">
           <p className="text-center text-[#8696a0] text-xs">
-            Bot is handling this conversation — toggle to Manual to reply
+            Bot is active — toggle to Manual mode to reply
           </p>
         </div>
       )}
@@ -491,14 +479,10 @@ export default function ChatWindow({ onBack }: { onBack?: () => void }) {
   );
 }
 
-// ------------------------------------------------------------------ //
-//  Date Separator                                                       //
-// ------------------------------------------------------------------ //
 function DateSeparator({ date }: { date: Date }) {
   let label = format(date, "MMMM d, yyyy");
   if (isToday(date)) label = "Today";
   else if (isYesterday(date)) label = "Yesterday";
-
   return (
     <div className="flex justify-center my-4">
       <span className="bg-[#1f2c33] text-[#8696a0] text-xs px-3 py-1 rounded-full border border-[#2a3942]">
@@ -506,96 +490,4 @@ function DateSeparator({ date }: { date: Date }) {
       </span>
     </div>
   );
-}
-
-// ------------------------------------------------------------------ //
-//  Message Bubble                                                       //
-// ------------------------------------------------------------------ //
-function MessageBubble({ msg }: { msg: Message }) {
-  const isUser = msg.sender_type === "USER";
-  const isBot = msg.sender_type === "BOT";
-
-  return (
-    <div className={`flex ${isUser ? "justify-start" : "justify-end"} mb-1`}>
-      <div
-        className={`max-w-[65%] px-3 py-2 rounded-lg text-sm shadow-sm ${
-          isUser
-            ? "bg-[#1f2c33] text-white rounded-tl-none"
-            : isBot
-            ? "bg-[#005c4b] text-white rounded-tr-none"
-            : "bg-[#2a4a7f] text-white rounded-tr-none"
-        }`}
-      >
-        {/* Sender label */}
-        {!isUser && (
-          <div className="flex items-center gap-1 mb-0.5">
-            {isBot ? (
-              <Bot size={10} className="text-[#00a884]" />
-            ) : (
-              <User size={10} className="text-blue-400" />
-            )}
-            <span className={`text-[10px] font-medium ${isBot ? "text-[#00a884]" : "text-blue-400"}`}>
-              {isBot ? "Bot" : "Agent"}
-            </span>
-          </div>
-        )}
-
-        <p className="leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
-
-        {/* Timestamp + ticks */}
-        <div className="flex items-center justify-end gap-1 mt-1">
-          <span className="text-[10px] text-white/40">
-            {format(new Date(msg.created_at), "hh:mm a")}
-          </span>
-          {!isUser && <MessageTick status={msg.status} />}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ------------------------------------------------------------------ //
-//  Message Ticks                                                        //
-// ------------------------------------------------------------------ //
-function MessageTick({ status }: { status: string }) {
-  if (status === "SENT") {
-    // Single grey tick
-    return (
-      <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-        <polyline points="1,5 4,8 9,2" stroke="#8696a0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    );
-  }
-
-  if (status === "DELIVERED") {
-    // Double grey ticks
-    return (
-      <svg width="18" height="10" viewBox="0 0 18 10" fill="none">
-        <polyline points="1,5 4,8 9,2" stroke="#8696a0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <polyline points="5,5 8,8 13,2" stroke="#8696a0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    );
-  }
-
-  if (status === "READ") {
-    // Double BLUE ticks
-    return (
-      <svg width="18" height="10" viewBox="0 0 18 10" fill="none">
-        <polyline points="1,5 4,8 9,2" stroke="#53bdeb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <polyline points="5,5 8,8 13,2" stroke="#53bdeb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    );
-  }
-
-  if (status === "FAILED") {
-    return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-    );
-  }
-
-  return null;
 }

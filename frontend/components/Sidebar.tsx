@@ -8,6 +8,7 @@ import { useStore, Conversation } from "@/lib/store";
 import { useSidebarSocket } from "@/lib/websocket";
 import ProfileSettings from "./ProfileSettings";
 import { useTabTitle } from "@/lib/useTabTitle";
+import { format, isToday, isYesterday } from "date-fns";
 
 // 1. Sidebar ke liye Props ka Type define kiya
 interface SidebarProps {
@@ -68,14 +69,6 @@ export default function Sidebar({ onConversationSelect }: SidebarProps) {
               Admin Panel
             </button>
           )}
-
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            user?.role === "SUPER_ADMIN"
-              ? "bg-amber-500/20 text-amber-400"
-              : "bg-[#00a884]/20 text-[#00a884]"
-          }`}>
-            {user?.role === "SUPER_ADMIN" ? "Admin" : "Operator"}
-          </span>
           <button
             onClick={() => setShowProfile(true)}
             className="text-[#8696a0] hover:text-white transition-colors"
@@ -163,17 +156,15 @@ function ConversationItem({
   const initials = (conv.contact_name || conv.contact_wa_id)
     .slice(0, 2)
     .toUpperCase();
-
-  const timeAgo = conv.last_message_at
-    ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: false })
-        .replace("about ", "")
-        .replace(" minutes", "m")
-        .replace(" minute", "m")
-        .replace(" hours", "h")
-        .replace(" hour", "h")
-        .replace(" days", "d")
-        .replace(" day", "d")
-    : "";
+  
+    const timeAgo = conv.last_message_at
+      ? (() => {
+          const date = new Date(conv.last_message_at);
+          if (isToday(date)) return format(date, "hh:mm a"); // Aaj ke liye time show hoga (e.g., 03:45 PM)
+          if (isYesterday(date)) return "Yesterday";        // Kal ke liye Yesterday
+          return format(date, "dd/MM/yyyy");                // Purani chats ke liye date (e.g., 15/05/2026)
+        })()
+      : "";
 
   return (
     <div
