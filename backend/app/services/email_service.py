@@ -32,6 +32,7 @@ class EmailService:
         if not self.gmail_user or not self.gmail_password:
             logger.warning("Gmail credentials not set — skipping email")
             # Development mein link log mein print karo
+            print(f"\n🔗 PASSWORD RESET LINK: {reset_link}\n")
             logger.info("PASSWORD RESET LINK (dev mode): %s", reset_link)
             return True  # Dev mein true return karo
 

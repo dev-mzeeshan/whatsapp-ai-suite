@@ -164,7 +164,7 @@ export default function AdminPanel() {
           </div>
 
           {activeTab === "analytics" && <AnalyticsDashboard />}
-          {activeTab === "clients" && <div>Existing clients table placeholder</div>}
+          {activeTab === "clients" && <div>Existing clients table</div>}
 
           {/* Table */}
           {loading ? (

@@ -129,6 +129,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel, EmailStr, Field
 
 from app.db.session import get_db
 from app.db.models import TenantUser, UserRole
@@ -309,3 +310,79 @@ async def update_profile(
 
     await db.commit()
     return {"message": "Profile updated successfully"}
+
+# ------------------------------------------------------------------ #
+#  Forgot / Reset Password                                             #
+# ------------------------------------------------------------------ #
+
+import secrets
+from datetime import timedelta
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    from app.services.email_service import email_service
+    from app.config import get_settings
+    settings = get_settings()
+
+    result = await db.execute(
+        select(TenantUser).where(TenantUser.email == body.email)
+    )
+    user = result.scalar_one_or_none()
+
+    if user:
+        token = secrets.token_urlsafe(32)
+        expires = datetime.now(timezone.utc) + timedelta(hours=1)
+        user.reset_token = token
+        user.reset_token_expires = expires
+        await db.commit()
+
+        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+        reset_link = f"{frontend_url}/reset-password?token={token}"
+
+        await email_service.send_password_reset(
+            to_email=user.email,
+            reset_link=reset_link,
+            user_name=user.full_name,
+        )
+        logger.info("Password reset requested | email=%s", body.email)
+
+    return {"message": "If this email exists, a reset link has been sent."}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    from app.services.auth_service import hash_password
+
+    result = await db.execute(
+        select(TenantUser).where(TenantUser.reset_token == body.token)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user or not user.reset_token_expires:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    if datetime.now(timezone.utc) > user.reset_token_expires:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+
+    user.hashed_password = hash_password(body.new_password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    await db.commit()
+
+    return {"message": "Password reset successfully. You can now login."}
