@@ -192,6 +192,10 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    GMAIL_USER: str = ""
+    GMAIL_APP_PASSWORD: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

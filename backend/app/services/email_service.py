@@ -20,9 +20,12 @@ class EmailService:
     """
 
     def __init__(self) -> None:
-        self.gmail_user = getattr(settings, "GMAIL_USER", "")
-        self.gmail_password = getattr(settings, "GMAIL_APP_PASSWORD", "")
-        self.from_name = settings.APP_NAME
+      # Har baar fresh settings load karo — cached nahi
+      from app.config import get_settings
+      _settings = get_settings()
+      self.gmail_user = getattr(_settings, "GMAIL_USER", "") or ""
+      self.gmail_password = getattr(_settings, "GMAIL_APP_PASSWORD", "") or ""
+      self.from_name = _settings.APP_NAME
 
     async def send_password_reset(self, to_email: str, reset_link: str, user_name: str) -> bool:
         """
@@ -99,7 +102,8 @@ class EmailService:
 </html>"""
 
     def _welcome_email_html(self, business: str, email: str, password: str) -> str:
-        frontend_url = getattr(settings, "FRONTEND_URL", "https://whatsapp-ai-suite-hazel.vercel.app")
+        # frontend_url = getattr(settings, "FRONTEND_URL", "https://whatsapp-ai-suite-hazel.vercel.app")
+        frontend_url = settings.FRONTEND_URL
         return f"""
 <!DOCTYPE html>
 <html>
