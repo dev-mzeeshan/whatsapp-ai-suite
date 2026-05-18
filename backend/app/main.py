@@ -8,6 +8,8 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.tenants import router as tenants_router
 from app.api.routes.ws import router as ws_router
 from app.api.routes.conversations import router as conversations_router
+from app.api.routes.analytics import router as analytics_router
+
 
 from app.config import get_settings
 
@@ -97,6 +99,7 @@ def create_app() -> FastAPI:
     app.include_router(tenants_router, prefix="/tenants", tags=["tenants"])
     app.include_router(ws_router, prefix="/ws", tags=["websocket"])
     app.include_router(conversations_router, prefix="/conversations", tags=["conversations"])
+    app.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 
     return app
 

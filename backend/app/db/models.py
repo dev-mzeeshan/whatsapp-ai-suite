@@ -69,7 +69,7 @@ class Contact(Base):
     )
     wa_id: Mapped[str] = mapped_column(
         String(20), nullable=False, unique=True, index=True,
-        comment="WhatsApp ID — E.164 phone number without the + sign"
+        comment="WhatsApp ID E.164 phone number without the + sign"
     )
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -316,7 +316,7 @@ class Tenant(Base):
     # Meta credentials — har client ke apne
     phone_number_id: Mapped[str] = mapped_column(
         String(50), nullable=False, unique=True, index=True,
-        comment="Meta phone_number_id — webhook routing ke liye"
+        comment="Meta phone_number_id webhook routing ke liye"
     )
     whatsapp_number: Mapped[str] = mapped_column(String(20), nullable=False)
     meta_access_token: Mapped[str] = mapped_column(Text, nullable=False)
@@ -392,6 +392,9 @@ class TenantUser(Base):
     # Relationships
     tenant: Mapped["Tenant | None"] = relationship(back_populates="users")
 
+    reset_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    reset_token_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     def __repr__(self) -> str:
         return f"<TenantUser {self.email} | {self.role}>"
 
@@ -414,7 +417,7 @@ class APIUsage(Base):
     )
     month: Mapped[str] = mapped_column(
         String(7), nullable=False,
-        comment="Format: 2024-01 — monthly bucketing ke liye"
+        comment="Format: 2024-01 monthly bucketing ke liye"
     )
     message_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     inbound_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

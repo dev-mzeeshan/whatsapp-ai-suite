@@ -14,6 +14,7 @@ import { tenantsAPI, api } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import AddTenant from "@/components/AddTenant";
 import { useRouter } from "next/navigation";
+import AnalyticsDashboard from "./AnalyticsDashboard";
 
 interface Tenant {
   id: string;
@@ -67,6 +68,7 @@ export default function AdminPanel() {
   const totalLimit = tenants.reduce((a, t) => a + t.monthly_message_limit, 0);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [activeTab, setActiveTab] = useState<"clients" | "analytics">("clients");
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
@@ -150,6 +152,19 @@ export default function AdminPanel() {
               Add Client
             </button>
           </div>
+          <div className="flex gap-1 bg-[#1f2c33] p-1 rounded-lg mb-6">
+            <button onClick={() => setActiveTab("clients")}
+              className={`flex-1 py-2 text-sm rounded-md transition-colors ${activeTab === "clients" ? "bg-[#2a3942] text-white" : "text-[#8696a0]"}`}>
+              Clients
+            </button>
+            <button onClick={() => setActiveTab("analytics")}
+              className={`flex-1 py-2 text-sm rounded-md transition-colors ${activeTab === "analytics" ? "bg-[#2a3942] text-white" : "text-[#8696a0]"}`}>
+              Analytics
+            </button>
+          </div>
+
+          {activeTab === "analytics" && <AnalyticsDashboard />}
+          {activeTab === "clients" && <div>Existing clients table placeholder</div>}
 
           {/* Table */}
           {loading ? (
